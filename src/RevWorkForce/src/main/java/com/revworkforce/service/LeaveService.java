@@ -5,7 +5,6 @@ import com.revworkforce.dao.NotificationDAO;
 import com.revworkforce.model.LeaveBalance;
 import com.revworkforce.model.LeaveRequest;
 import com.revworkforce.model.Notification;
-import com.revworkforce.model.User;
 
 import java.sql.SQLException;
 import java.util.Calendar;

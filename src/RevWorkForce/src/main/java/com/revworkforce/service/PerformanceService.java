@@ -19,7 +19,6 @@ public class PerformanceService {
         this.notificationDAO = new NotificationDAO();
     }
 
-    // Performance Review Methods
     public boolean createOrUpdatePerformanceReview(PerformanceReview review) throws SQLException {
         PerformanceReview existing = performanceDAO.getPerformanceReview(review.getUserId(), review.getReviewYear());
 
@@ -39,9 +38,6 @@ public class PerformanceService {
             boolean updated = performanceDAO.updatePerformanceReview(review);
 
             if (updated) {
-                // Notify manager
-                // In production, get manager ID from user
-                // This would need user service integration
                 sendNotificationToManager(userId, "Performance Review Submitted",
                         "An employee has submitted their performance review for review.");
             }
@@ -104,19 +100,14 @@ public class PerformanceService {
         boolean updated = performanceDAO.provideGoalFeedback(goalId, feedback);
 
         if (updated) {
-            // Get goal to find user
-            // For brevity, we'll skip getting user details
-            // In production, get goal first to get user ID
         }
 
         return updated;
     }
 
     private void sendNotificationToManager(int employeeId, String title, String message) throws SQLException {
-        // In production, get manager ID from employee
-        // This would require UserService
         Notification notification = new Notification(
-                0, // manager ID would go here
+                0,
                 title,
                 message,
                 Notification.NotificationType.PERFORMANCE

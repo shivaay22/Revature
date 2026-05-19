@@ -12,7 +12,6 @@ import java.util.regex.Pattern;
 public class UserService {
     private UserDAO userDAO;
 
-    // Validation patterns
     private static final Pattern EMAIL_PATTERN = Pattern.compile(
             "^[A-Za-z0-9+_.-]+@(.+)$"
     );
@@ -31,7 +30,6 @@ public class UserService {
     }
 
     public User login(String employeeId, String password) throws SQLException {
-        // Validation for login
         if (employeeId == null || employeeId.trim().isEmpty()) {
             throw new ValidationException("Employee ID cannot be null or empty");
         }
@@ -104,7 +102,6 @@ public class UserService {
             throw new ValidationException("Manager ID must be a positive integer");
         }
 
-        // Verify manager exists
         User manager = userDAO.getUserById(managerId);
         if (manager == null) {
             throw new ValidationException("Manager not found with ID: " + managerId);
@@ -121,12 +118,10 @@ public class UserService {
     }
 
     public boolean createUser(User user) throws SQLException {
-        // Validate user object
         if (user == null) {
             throw new ValidationException("User object cannot be null");
         }
 
-        // Validate employee ID
         if (user.getEmployeeId() == null || user.getEmployeeId().trim().isEmpty()) {
             throw new ValidationException("Employee ID cannot be null or empty");
         }
@@ -135,13 +130,11 @@ public class UserService {
             throw new ValidationException("Employee ID must be 4-20 alphanumeric characters");
         }
 
-        // Check for duplicate employee ID
         User existingUser = userDAO.getUserByEmployeeId(user.getEmployeeId());
         if (existingUser != null) {
             throw new ValidationException("Employee ID already exists: " + user.getEmployeeId());
         }
 
-        // Validate name
         if (user.getFullName() == null || user.getFullName().trim().isEmpty()) {
             throw new ValidationException("Full name cannot be null or empty");
         }
@@ -150,7 +143,6 @@ public class UserService {
             throw new ValidationException("Full name must be between 2 and 100 characters");
         }
 
-        // Validate email
         if (user.getEmail() == null || user.getEmail().trim().isEmpty()) {
             throw new ValidationException("Email cannot be null or empty");
         }
@@ -167,7 +159,6 @@ public class UserService {
             throw new ValidationException("Department name exceeds maximum length of 50 characters");
         }
 
-        // Validate designation
         if (user.getDesignation() == null || user.getDesignation().trim().isEmpty()) {
             throw new ValidationException("Designation cannot be null or empty");
         }
@@ -176,11 +167,9 @@ public class UserService {
             throw new ValidationException("Designation exceeds maximum length of 50 characters");
         }
 
-        // Generate password if not provided
         if (user.getPasswordHash() == null) {
             String randomPassword = PasswordUtil.generateRandomPassword();
 
-            // Validate generated password meets criteria
             if (!PASSWORD_PATTERN.matcher(randomPassword).matches()) {
                 throw new ValidationException("Generated password does not meet security requirements");
             }
@@ -188,7 +177,6 @@ public class UserService {
             user.setPasswordHash(PasswordUtil.hashPassword(randomPassword));
             System.out.println("Generated password for " + user.getEmail() + ": " + randomPassword);
         } else {
-            // If password is provided, validate it
             if (!PASSWORD_PATTERN.matcher(user.getPasswordHash()).matches()) {
                 throw new ValidationException("Password must be at least 8 characters and contain uppercase, lowercase, number, and special character");
             }
@@ -212,13 +200,12 @@ public class UserService {
             throw new ValidationException("Invalid user ID: " + user.getUserId());
         }
 
-        // Verify user exists
+
         User existingUser = userDAO.getUserById(user.getUserId());
         if (existingUser == null) {
             throw new ValidationException("User not found with ID: " + user.getUserId());
         }
 
-        // Validate name if being updated
         if (user.getFullName() != null) {
             if (user.getFullName().trim().isEmpty()) {
                 throw new ValidationException("Full name cannot be empty");
@@ -227,17 +214,11 @@ public class UserService {
                 throw new ValidationException("Full name must be between 2 and 100 characters");
             }
         }
-
-        // Validate email if being updated
         if (user.getEmail() != null && !user.getEmail().trim().isEmpty()) {
             if (!EMAIL_PATTERN.matcher(user.getEmail()).matches()) {
                 throw new ValidationException("Invalid email format");
             }
         }
-
-        // Validate role if being updated
-
-
         return userDAO.updateUser(user);
     }
 
@@ -246,25 +227,21 @@ public class UserService {
             throw new ValidationException("Invalid user ID: " + userId);
         }
 
-        // Verify user exists
         User existingUser = userDAO.getUserById(userId);
         if (existingUser == null) {
             throw new ValidationException("User not found with ID: " + userId);
         }
 
-        // Validate phone
         if (phone != null && !phone.trim().isEmpty()) {
             if (!PHONE_PATTERN.matcher(phone).matches()) {
                 throw new ValidationException("Invalid phone number format. Must be 10-15 digits, optionally starting with +");
             }
         }
 
-        // Validate address
         if (address != null && address.length() > 500) {
             throw new ValidationException("Address exceeds maximum length of 500 characters");
         }
 
-        // Validate emergency contact
         if (emergencyContact != null && !emergencyContact.trim().isEmpty()) {
             if (!PHONE_PATTERN.matcher(emergencyContact).matches()) {
                 throw new ValidationException("Invalid emergency contact number format");
@@ -291,7 +268,6 @@ public class UserService {
             throw new ValidationException("New password must be different from old password");
         }
 
-        // Validate new password strength
         if (!PASSWORD_PATTERN.matcher(newPassword).matches()) {
             throw new ValidationException("Password must be at least 8 characters and contain uppercase, lowercase, number, and special character");
         }
