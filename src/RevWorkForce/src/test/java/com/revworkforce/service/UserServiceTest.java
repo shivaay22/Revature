@@ -3,6 +3,7 @@ package com.revworkforce.service;
 import com.revworkforce.dao.UserDAO;
 import com.revworkforce.model.User;
 import com.revworkforce.utils.PasswordUtil;
+import com.revworkforce.exceptions.ValidationException;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -35,27 +36,27 @@ class UserServiceTest {
         user = new User();
         user.setUserId(1);
         user.setEmployeeId("EMP001");
+        user.setFullName("John Doe");
         user.setEmail("test@mail.com");
-        user.setPasswordHash("hashed");
+        user.setPasswordHash("SecurePass123@");
+        user.setDepartment("Engineering");
+        user.setDesignation("Software Engineer");
+        user.setActive(true);
     }
-
 
     // LOGIN
 
-
     @Test
     void testLoginSuccess() throws SQLException {
-        when(userDAO.authenticate("EMP001", "pass")).thenReturn(user);
+        when(userDAO.authenticate("EMP001", "SecurePass123@")).thenReturn(user);
 
-        User result = userService.login("EMP001", "pass");
+        User result = userService.login("EMP001", "SecurePass123@");
 
         assertNotNull(result);
         assertEquals("EMP001", result.getEmployeeId());
     }
 
-
     // GET USER
-
 
     @Test
     void testGetUserById() throws SQLException {
@@ -71,9 +72,7 @@ class UserServiceTest {
         assertEquals(user, userService.getUserByEmployeeId("EMP001"));
     }
 
-
     // GET EMPLOYEES
-
 
     @Test
     void testGetAllEmployees() throws SQLException {
@@ -84,14 +83,17 @@ class UserServiceTest {
 
     @Test
     void testGetEmployeesByManager() throws SQLException {
+        User manager = new User();
+        manager.setUserId(10);
+        manager.setActive(true);
+
+        when(userDAO.getUserById(10)).thenReturn(manager);
         when(userDAO.getEmployeesByManager(10)).thenReturn(List.of(user));
 
         assertEquals(1, userService.getEmployeesByManager(10).size());
     }
 
-
     // CREATE USER
-
 
     @Test
     void testCreateUserWithExistingPassword() throws SQLException {
@@ -110,9 +112,9 @@ class UserServiceTest {
         try (MockedStatic<PasswordUtil> mocked = mockStatic(PasswordUtil.class)) {
 
             mocked.when(PasswordUtil::generateRandomPassword)
-                    .thenReturn("random123");
+                    .thenReturn("RandomPass123@");
 
-            mocked.when(() -> PasswordUtil.hashPassword("random123"))
+            mocked.when(() -> PasswordUtil.hashPassword("RandomPass123@"))
                     .thenReturn("hashed123");
 
             when(userDAO.createUser(user)).thenReturn(true);
@@ -126,9 +128,9 @@ class UserServiceTest {
 
     // UPDATE USER
 
-
     @Test
     void testUpdateUser() throws SQLException {
+        when(userDAO.getUserById(1)).thenReturn(user);
         when(userDAO.updateUser(user)).thenReturn(true);
 
         assertTrue(userService.updateUser(user));
@@ -136,15 +138,14 @@ class UserServiceTest {
 
     @Test
     void testUpdateProfile() throws SQLException {
-        when(userDAO.updateProfile(1, "123", "addr", "999"))
+        when(userDAO.getUserById(1)).thenReturn(user);
+        when(userDAO.updateProfile(1, "1234567890", "addr", "0987654321"))
                 .thenReturn(true);
 
-        assertTrue(userService.updateProfile(1, "123", "addr", "999"));
+        assertTrue(userService.updateProfile(1, "1234567890", "addr", "0987654321"));
     }
 
-
     // CHANGE PASSWORD
-
 
     @Test
     void testChangePasswordSuccess() throws SQLException {
@@ -152,15 +153,15 @@ class UserServiceTest {
 
             when(userDAO.getUserById(1)).thenReturn(user);
 
-            mocked.when(() -> PasswordUtil.verifyPassword("old", "hashed"))
+            mocked.when(() -> PasswordUtil.verifyPassword("SecureOldPass123@", "SecurePass123@"))
                     .thenReturn(true);
 
-            mocked.when(() -> PasswordUtil.hashPassword("new"))
+            mocked.when(() -> PasswordUtil.hashPassword("SecureNewPass123@"))
                     .thenReturn("newHash");
 
             when(userDAO.changePassword(1, "newHash")).thenReturn(true);
 
-            assertTrue(userService.changePassword(1, "old", "new"));
+            assertTrue(userService.changePassword(1, "SecureOldPass123@", "SecureNewPass123@"));
         }
     }
 
@@ -170,10 +171,12 @@ class UserServiceTest {
 
             when(userDAO.getUserById(1)).thenReturn(user);
 
-            mocked.when(() -> PasswordUtil.verifyPassword("old", "hashed"))
+            mocked.when(() -> PasswordUtil.verifyPassword("SecureWrongOldPass123@", "SecurePass123@"))
                     .thenReturn(false);
 
-            assertFalse(userService.changePassword(1, "old", "new"));
+            assertThrows(ValidationException.class, () -> {
+                userService.changePassword(1, "SecureWrongOldPass123@", "SecureNewPass123@");
+            });
         }
     }
 
@@ -181,32 +184,32 @@ class UserServiceTest {
     void testChangePasswordUserNotFound() throws SQLException {
         when(userDAO.getUserById(1)).thenReturn(null);
 
-        assertFalse(userService.changePassword(1, "old", "new"));
+        assertThrows(ValidationException.class, () -> {
+            userService.changePassword(1, "SecureOldPass123@", "SecureNewPass123@");
+        });
     }
 
-
     // RESET PASSWORD
-
 
     @Test
     void testResetPassword() throws SQLException {
         try (MockedStatic<PasswordUtil> mocked = mockStatic(PasswordUtil.class)) {
 
-            mocked.when(() -> PasswordUtil.hashPassword("new"))
+            when(userDAO.getUserById(1)).thenReturn(user);
+            mocked.when(() -> PasswordUtil.hashPassword("SecureNewPass123@"))
                     .thenReturn("hashed");
 
             when(userDAO.changePassword(1, "hashed")).thenReturn(true);
 
-            assertTrue(userService.resetPassword(1, "new"));
+            assertTrue(userService.resetPassword(1, "SecureNewPass123@"));
         }
     }
 
-
     // ACTIVATE / DEACTIVATE
-
 
     @Test
     void testDeactivateUser() throws SQLException {
+        when(userDAO.getUserById(1)).thenReturn(user);
         when(userDAO.deactivateUser(1)).thenReturn(true);
 
         assertTrue(userService.deactivateUser(1));
@@ -214,14 +217,14 @@ class UserServiceTest {
 
     @Test
     void testActivateUser() throws SQLException {
+        user.setActive(false);
+        when(userDAO.getUserById(1)).thenReturn(user);
         when(userDAO.activateUser(1)).thenReturn(true);
 
         assertTrue(userService.activateUser(1));
     }
 
-
     // SEARCH
-
 
     @Test
     void testSearchEmployees() throws SQLException {
@@ -236,6 +239,7 @@ class UserServiceTest {
     void testGetReportingManagerSuccess() throws SQLException {
         User manager = new User();
         manager.setUserId(2);
+        manager.setActive(true);
 
         user.setManagerId(2);
 
@@ -254,13 +258,17 @@ class UserServiceTest {
 
         when(userDAO.getUserById(1)).thenReturn(user);
 
-        assertNull(userService.getReportingManager(1));
+        assertThrows(ValidationException.class, () -> {
+            userService.getReportingManager(1);
+        });
     }
 
     @Test
     void testGetReportingManagerUserNotFound() throws SQLException {
         when(userDAO.getUserById(1)).thenReturn(null);
 
-        assertNull(userService.getReportingManager(1));
+        assertThrows(ValidationException.class, () -> {
+            userService.getReportingManager(1);
+        });
     }
 }

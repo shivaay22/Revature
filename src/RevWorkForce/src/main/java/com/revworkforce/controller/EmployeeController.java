@@ -18,6 +18,7 @@ public class EmployeeController {
     private PerformanceService performanceService;
     private NotificationService notificationService;
     private HolidayService holidayService;
+    private AnnouncementService announcementService;
     private Scanner scanner;
     private SimpleDateFormat dateFormat;
 
@@ -28,6 +29,7 @@ public class EmployeeController {
         this.performanceService = new PerformanceService();
         this.notificationService = new NotificationService();
         this.holidayService = new HolidayService();
+        this.announcementService = new AnnouncementService();
         this.scanner = new Scanner(System.in);
         this.dateFormat = new SimpleDateFormat("yyyy-MM-dd");
     }
@@ -601,8 +603,25 @@ public class EmployeeController {
 
     private void viewAnnouncements() {
         System.out.println("\n=== Company Announcements ===");
-        // In production, implement AnnouncementDAO and service
-        System.out.println("No announcements at this time.");
+        try {
+            List<Announcement> announcements = announcementService.getActiveAnnouncements();
+            if (announcements.isEmpty()) {
+                System.out.println("No announcements at this time.");
+            } else {
+                for (Announcement announcement : announcements) {
+                    System.out.println("\n----------------------------------------");
+                    System.out.println("Title: " + announcement.getTitle());
+                    System.out.println("Posted: " + announcement.getCreatedAt());
+                    System.out.println("Content: " + announcement.getContent());
+                    if (announcement.getExpiryDate() != null) {
+                        System.out.println("Expires: " + dateFormat.format(announcement.getExpiryDate()));
+                    }
+                }
+                System.out.println("----------------------------------------");
+            }
+        } catch (SQLException e) {
+            System.err.println("Error fetching announcements: " + e.getMessage());
+        }
     }
 
     private void viewNotifications() {

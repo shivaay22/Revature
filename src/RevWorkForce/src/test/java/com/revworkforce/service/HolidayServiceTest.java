@@ -36,7 +36,7 @@ class HolidayServiceTest {
         holiday = new Holiday();
         holiday.setHolidayName("Diwali");
         holiday.setDescription("Festival of lights");
-        holiday.setHolidayDate(new Date());
+        holiday.setHolidayDate(new Date(System.currentTimeMillis() + 86400000));
     }
 
 

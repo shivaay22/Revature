@@ -21,47 +21,30 @@ public class AuthController {
         this.scanner = new Scanner(System.in);
     }
 
-    // Add this method to AuthController class
     public boolean register(String employeeId, String fullName, String email, String password,
                             User.UserRole role, String phone, String department, String designation) {
-        String query = "INSERT INTO users (employee_id, full_name, email, password_hash, role, phone, department, designation, is_active, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        try {
+            User user = new User();
+            user.setEmployeeId(employeeId);
+            user.setFullName(fullName);
+            user.setEmail(email);
+            user.setPasswordHash(password);
+            user.setRole(role);
+            user.setPhone(phone);
+            user.setDepartment(department);
+            user.setDesignation(designation);
+            user.setActive(true);
+            user.setJoiningDate(new Date());
 
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(query)) {
-
-            // Hash the password before storing (for security)
-            String hashedPassword = hashPassword(password);
-
-            pstmt.setString(1, employeeId);
-            pstmt.setString(2, fullName);
-            pstmt.setString(3, email);
-            pstmt.setString(4, hashedPassword);
-            pstmt.setString(5, role.name());
-            pstmt.setString(6, phone != null && !phone.isEmpty() ? phone : null);
-            pstmt.setString(7, department != null && !department.isEmpty() ? department : null);
-            pstmt.setString(8, designation != null && !designation.isEmpty() ? designation : null);
-            pstmt.setBoolean(9, true);
-            pstmt.setTimestamp(10, new java.sql.Timestamp(new Date().getTime()));
-            pstmt.setTimestamp(11, new java.sql.Timestamp(new Date().getTime()));
-
-            int result = pstmt.executeUpdate();
-            return result > 0;
-
-        } catch (SQLException e) {
-            if (e.getMessage().contains("Duplicate entry")) {
+            return userService.createUser(user);
+        } catch (Exception e) {
+            if (e.getMessage() != null && (e.getMessage().contains("already exists") || e.getMessage().contains("Duplicate entry"))) {
                 System.out.println("Error: Employee ID or Email already exists!");
             } else {
-                e.printStackTrace();
+                System.out.println("Error: " + e.getMessage());
             }
             return false;
         }
-    }
-
-    // Helper method to hash password (you can use BCrypt or simple hashing)
-    private String hashPassword(String password) {
-        // For production, use BCrypt or a proper hashing algorithm
-        // This is a simple example - use a proper hash in production!
-        return password; // Replace with actual hashing like BCrypt
     }
 
     public User login() {
@@ -72,7 +55,6 @@ public class AuthController {
         String password = scanner.nextLine();
 
         try {
-            User user = userService.login(employeeId, password);
             if (employeeId == null || employeeId.trim().isEmpty()) {
                 throw new ValidationException("Username cannot be empty");
             }
@@ -80,6 +62,8 @@ public class AuthController {
             if (password == null || password.isEmpty()) {
                 throw new ValidationException("Password cannot be empty");
             }
+
+            User user = userService.login(employeeId, password);
             if (user != null) {
                 SessionManager.getInstance().login(user);
                 System.out.println("\n Login successful! Welcome, " + user.getFullName());
@@ -87,6 +71,8 @@ public class AuthController {
             } else {
                 System.out.println("\n Invalid credentials. Please try again.");
             }
+        } catch (ValidationException e) {
+            System.out.println("\n Validation error: " + e.getMessage());
         } catch (SQLException e) {
             System.err.println("Database error: " + e.getMessage());
         }

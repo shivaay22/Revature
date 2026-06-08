@@ -26,7 +26,7 @@ public class UserDAO {
                 System.out.println("Entered password: " + password); // Debug output
 
 
-                if (password.equals(storedPassword)) {
+                if (com.revworkforce.utils.PasswordUtil.verifyPassword(password, storedPassword)) {
                     System.out.println("Password match successful!"); // Debug output
                     return mapResultSetToUser(rs);
                 } else {

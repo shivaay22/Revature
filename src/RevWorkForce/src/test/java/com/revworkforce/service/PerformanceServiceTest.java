@@ -124,7 +124,7 @@ class PerformanceServiceTest {
     @Test
     void testProvidePerformanceFeedbackSuccess() throws SQLException {
         when(performanceDAO.provideManagerFeedback(1, 4.5, "Good")).thenReturn(true);
-        when(performanceDAO.getPerformanceReview(1, 0)).thenReturn(review);
+        when(performanceDAO.getPerformanceReviewById(1)).thenReturn(review);
 
         boolean result = performanceService.providePerformanceFeedback(1, 4.5, "Good");
 
@@ -135,7 +135,7 @@ class PerformanceServiceTest {
     @Test
     void testProvidePerformanceFeedbackReviewNotFound() throws SQLException {
         when(performanceDAO.provideManagerFeedback(1, 4.5, "Good")).thenReturn(true);
-        when(performanceDAO.getPerformanceReview(1, 0)).thenReturn(null);
+        when(performanceDAO.getPerformanceReviewById(1)).thenReturn(null);
 
         boolean result = performanceService.providePerformanceFeedback(1, 4.5, "Good");
 

@@ -59,7 +59,7 @@ public class PerformanceService {
         boolean updated = performanceDAO.provideManagerFeedback(reviewId, rating, feedback);
 
         if (updated) {
-            PerformanceReview review = performanceDAO.getPerformanceReview(reviewId, 0);
+            PerformanceReview review = performanceDAO.getPerformanceReviewById(reviewId);
             if (review != null) {
                 Notification notification = new Notification(
                         review.getUserId(),
@@ -72,6 +72,10 @@ public class PerformanceService {
         }
 
         return updated;
+    }
+
+    public PerformanceReview getPerformanceReviewById(int reviewId) throws SQLException {
+        return performanceDAO.getPerformanceReviewById(reviewId);
     }
 
     // Goal Methods

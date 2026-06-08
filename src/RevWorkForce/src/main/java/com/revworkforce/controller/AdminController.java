@@ -19,6 +19,7 @@ public class AdminController {
     private HolidayService holidayService;
     private NotificationService notificationService;
     private PerformanceService performanceService;
+    private AnnouncementService announcementService;
     private Scanner scanner;
     private SimpleDateFormat dateFormatter;
 
@@ -29,6 +30,7 @@ public class AdminController {
         this.holidayService = new HolidayService();
         this.notificationService = new NotificationService();
         this.performanceService = new PerformanceService();
+        this.announcementService = new AnnouncementService();
         this.scanner = new Scanner(System.in);
         this.dateFormatter = new SimpleDateFormat("yyyy-MM-dd");
     }
@@ -210,7 +212,6 @@ public class AdminController {
         System.out.print("Emergency Contact Number: ");
         newEmployee.setEmergencyContact(scanner.nextLine());
 
-        // Generate temporary password
         String tempPassword = PasswordUtil.generateRandomPassword();
         newEmployee.setPasswordHash(PasswordUtil.hashPassword(tempPassword));
         newEmployee.setActive(true);
@@ -226,7 +227,6 @@ public class AdminController {
                 System.out.println(" Please share this password with the employee.");
                 System.out.println(" Employee must change password on first login.");
 
-                // Send notification to employee
                 notificationService.sendNotification(
                         newEmployee.getUserId(),
                         "Welcome to RevWorkForce",
@@ -569,9 +569,6 @@ public class AdminController {
         }
     }
 
-    /**
-     * Adjust leave balance for employees
-     */
     private void adjustEmployeeLeaveBalance() {
         System.out.println("\n=== Adjust Employee Leave Balance ===");
         System.out.print("Enter Employee ID: ");
@@ -612,9 +609,6 @@ public class AdminController {
         }
     }
 
-    /**
-     * Generate various leave reports
-     */
     private void generateLeaveReports() {
         System.out.println("\n=== Generate Leave Reports ===");
         System.out.println("1. Department-wise Leave Report");
@@ -717,14 +711,10 @@ public class AdminController {
         System.out.println("-".repeat(60));
 
         for (User emp : employees) {
-            // This would need additional DAO method to get leaves by month
             System.out.printf("%-25s %-15d\n", truncateString(emp.getFullName(), 25), 0);
         }
         System.out.println("-".repeat(60));
     }
-
-
-//      Manage holiday calendar
 
     private void manageHolidayCalendar() {
         while (true) {
@@ -852,8 +842,6 @@ public class AdminController {
         }
     }
 
-
-//     * Manage departments and designations master data
     private void manageDepartmentsAndDesignations() {
         System.out.println("\n=== Manage Departments & Designations ===");
         System.out.println("-".repeat(40));
@@ -885,9 +873,6 @@ public class AdminController {
         }
     }
 
-    /**
-     * Configure performance review cycles
-     */
     private void configurePerformanceCycles() {
         System.out.println("\n=== Configure Performance Review Cycles ===");
         System.out.println("-".repeat(40));
@@ -911,8 +896,6 @@ public class AdminController {
         System.out.println("Cycle Period: " + startMonth + "/1 - " + endMonth + "/31");
         System.out.println("Submission Deadline: " + deadlineDay + "th of " + endMonth);
         System.out.println("=".repeat(40));
-
-        // In production, save these settings to database
     }
 
 
@@ -955,39 +938,53 @@ public class AdminController {
         System.out.print("Is this urgent? (yes/no): ");
         boolean isUrgent = scanner.nextLine().equalsIgnoreCase("yes");
 
-        // In production, implement AnnouncementDAO
-        System.out.println("\n Announcement posted successfully!");
-
-        if (isUrgent) {
-            System.out.println(" URGENT: This announcement has been marked as urgent.");
-        }
-
-        System.out.println("Title: " + title);
-        System.out.println("Content: " + content);
+        Date expiryDate = null;
         if (!expiryStr.isEmpty()) {
-            System.out.println("Expires: " + expiryStr);
+            try {
+                expiryDate = dateFormatter.parse(expiryStr);
+            } catch (ParseException e) {
+                System.out.println("Invalid date format. Skipping expiry date.");
+            }
         }
 
-        // Notify all employees about announcement
+        Announcement announcement = new Announcement();
+        announcement.setTitle(title);
+        announcement.setContent(content);
+        announcement.setCreatedBy(currentAdmin.getUserId());
+        announcement.setExpiryDate(expiryDate);
+
         try {
-            List<User> allEmployees = userService.getAllEmployees();
-            for (User emp : allEmployees) {
-                notificationService.sendNotification(
-                        emp.getUserId(),
-                        title,
-                        content,
-                        Notification.NotificationType.ANNOUNCEMENT
-                );
+            if (announcementService.createAnnouncement(announcement)) {
+                System.out.println("\n Announcement posted successfully!");
+
+                if (isUrgent) {
+                    System.out.println(" URGENT: This announcement has been marked as urgent.");
+                }
+
+                System.out.println("Title: " + title);
+                System.out.println("Content: " + content);
+                if (expiryDate != null) {
+                    System.out.println("Expires: " + expiryStr);
+                }
+
+                List<User> allEmployees = userService.getAllEmployees();
+                for (User emp : allEmployees) {
+                    notificationService.sendNotification(
+                            emp.getUserId(),
+                            (isUrgent ? "[URGENT] " : "") + title,
+                            content,
+                            Notification.NotificationType.ANNOUNCEMENT
+                    );
+                }
+                System.out.println("📬 Notification sent to " + allEmployees.size() + " employees.");
+            } else {
+                System.out.println(" Failed to post announcement.");
             }
-            System.out.println("📬 Notification sent to " + allEmployees.size() + " employees.");
         } catch (SQLException e) {
-            System.err.println("Error sending notifications: " + e.getMessage());
+            System.err.println("Error posting announcement: " + e.getMessage());
         }
     }
 
-    /**
-     * Reset employee password
-     */
     private void resetEmployeePassword() {
         System.out.println("\n=== Reset Employee Password ===");
         System.out.print("Enter Employee ID: ");
@@ -1068,7 +1065,6 @@ public class AdminController {
             System.out.println("  • Managers: " + managerCount);
             System.out.println("  • Employees: " + employeeCount);
 
-            // Leave statistics for current year
             int currentYear = java.util.Calendar.getInstance().get(java.util.Calendar.YEAR);
             System.out.println("\n LEAVE STATISTICS (" + currentYear + "):");
             int totalLeavesTaken = 0;
@@ -1090,9 +1086,6 @@ public class AdminController {
             System.err.println("Error fetching statistics: " + e.getMessage());
         }
     }
-
-
-//     Display employee details
 
     private void displayEmployeeDetails(User employee) {
         System.out.println("\n Current Employee Information:");

@@ -223,6 +223,22 @@ public class PerformanceDAO {
         }
     }
 
+    public PerformanceReview getPerformanceReviewById(int reviewId) throws SQLException {
+        String query = "SELECT * FROM performance_reviews WHERE review_id = ?";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(query)) {
+
+            pstmt.setInt(1, reviewId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return mapResultSetToPerformanceReview(rs);
+                }
+            }
+        }
+        return null;
+    }
+
     private PerformanceReview mapResultSetToPerformanceReview(ResultSet rs) throws SQLException {
         PerformanceReview review = new PerformanceReview();
         review.setReviewId(rs.getInt("review_id"));

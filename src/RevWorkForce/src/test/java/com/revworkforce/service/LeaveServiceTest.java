@@ -28,7 +28,6 @@ class LeaveServiceTest {
     @Mock
     private NotificationDAO notificationDAO;
 
-    @Spy
     @InjectMocks
     private LeaveService leaveService;
 
@@ -72,11 +71,11 @@ class LeaveServiceTest {
     @Test
     void testApplyLeaveInvalidDate() {
         assertThrows(IllegalArgumentException.class, () ->
-                leaveService.applyLeave(1,
-                        LeaveRequest.LeaveType.SICK,
-                        endDate,
-                        startDate,
-                        "Invalid"));
+            leaveService.applyLeave(1,
+                    LeaveRequest.LeaveType.SICK,
+                    endDate,
+                    startDate,
+                    "Invalid"));
     }
 
     @Test
@@ -88,11 +87,11 @@ class LeaveServiceTest {
                 .thenReturn(balance);
 
         assertThrows(IllegalArgumentException.class, () ->
-                leaveService.applyLeave(1,
-                        LeaveRequest.LeaveType.SICK,
-                        startDate,
-                        endDate,
-                        "Test"));
+            leaveService.applyLeave(1,
+                    LeaveRequest.LeaveType.SICK,
+                    startDate,
+                    endDate,
+                    "Test"));
     }
 
     // GET LEAVE REQUESTS
@@ -137,7 +136,7 @@ class LeaveServiceTest {
         when(request.getLeaveType()).thenReturn(LeaveRequest.LeaveType.SICK);
         when(request.getNumberOfDays()).thenReturn(3);
 
-        doReturn(request).when(leaveService).getMyLeaveRequests(1);
+        when(leaveDAO.getLeaveRequestById(1)).thenReturn(request);
 
         LeaveBalance balance = new LeaveBalance(1, LeaveRequest.LeaveType.SICK, 10, 2026);
         balance.setUsedDays(2);
@@ -153,7 +152,7 @@ class LeaveServiceTest {
 
     @Test
     void testApproveLeaveNotFound() throws SQLException {
-        doReturn(null).when(leaveService).getMyLeaveRequests(1);
+        when(leaveDAO.getLeaveRequestById(1)).thenReturn(null);
 
         boolean result = leaveService.approveLeave(1, 10, "OK");
 
@@ -166,9 +165,11 @@ class LeaveServiceTest {
     @Test
     void testRejectLeaveSuccess() throws SQLException {
         LeaveRequest request = new LeaveRequest();
+        request.setUserId(1);
+        request.setStartDate(startDate);
+        request.setEndDate(endDate);
 
-        doReturn(request).when(leaveService).getMyLeaveRequests(1);
-
+        when(leaveDAO.getLeaveRequestById(1)).thenReturn(request);
         when(leaveDAO.updateLeaveStatus(1, "REJECTED", "No")).thenReturn(true);
 
         boolean result = leaveService.rejectLeave(1, 10, "No");
@@ -187,7 +188,7 @@ class LeaveServiceTest {
 
         when(request.getStatus()).thenReturn(LeaveRequest.LeaveStatus.PENDING);
 
-        doReturn(request).when(leaveService).getMyLeaveRequests(1);
+        when(leaveDAO.getLeaveRequestById(1)).thenReturn(request);
         when(leaveDAO.cancelLeaveRequest(1)).thenReturn(true);
 
         assertTrue(leaveService.cancelLeaveRequest(1));
@@ -199,7 +200,7 @@ class LeaveServiceTest {
 
         when(request.getStatus()).thenReturn(LeaveRequest.LeaveStatus.APPROVED);
 
-        doReturn(request).when(leaveService).getMyLeaveRequests(1);
+        when(leaveDAO.getLeaveRequestById(1)).thenReturn(request);
 
         assertFalse(leaveService.cancelLeaveRequest(1));
     }

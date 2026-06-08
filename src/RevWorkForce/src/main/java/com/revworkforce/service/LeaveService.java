@@ -129,8 +129,8 @@ public class LeaveService {
         }
     }
 
-    private LeaveRequest getLeaveRequestById(int requestId) throws SQLException {
-        return null;
+    public LeaveRequest getLeaveRequestById(int requestId) throws SQLException {
+        return leaveDAO.getLeaveRequestById(requestId);
     }
 
     private int calculateDays(Date startDate, Date endDate) {

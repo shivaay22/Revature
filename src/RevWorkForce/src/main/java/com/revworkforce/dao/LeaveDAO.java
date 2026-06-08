@@ -176,6 +176,22 @@ public class LeaveDAO {
         }
     }
 
+    public LeaveRequest getLeaveRequestById(int requestId) throws SQLException {
+        String query = "SELECT * FROM leave_requests WHERE request_id = ?";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(query)) {
+
+            pstmt.setInt(1, requestId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return mapResultSetToLeaveRequest(rs);
+                }
+            }
+        }
+        return null;
+    }
+
     private LeaveRequest mapResultSetToLeaveRequest(ResultSet rs) throws SQLException {
         LeaveRequest request = new LeaveRequest();
         request.setRequestId(rs.getInt("request_id"));

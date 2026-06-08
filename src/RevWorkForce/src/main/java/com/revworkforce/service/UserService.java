@@ -19,7 +19,7 @@ public class UserService {
             "^\\+?[0-9]{10,15}$"
     );
     private static final Pattern PASSWORD_PATTERN = Pattern.compile(
-            "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=])(?=\\S+$).{8,}$"
+            "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z\\d])(?=\\S+$).{8,}$"
     );
     private static final Pattern EMPLOYEE_ID_PATTERN = Pattern.compile(
             "^[A-Za-z0-9]{4,20}$"
@@ -151,20 +151,17 @@ public class UserService {
             throw new ValidationException("Invalid email format");
         }
         // Validate department
-        if (user.getDepartment() == null || user.getDepartment().trim().isEmpty()) {
-            throw new ValidationException("Department cannot be null or empty");
+        if (user.getDepartment() != null && !user.getDepartment().trim().isEmpty()) {
+            if (user.getDepartment().length() > 50) {
+                throw new ValidationException("Department name exceeds maximum length of 50 characters");
+            }
         }
 
-        if (user.getDepartment().length() > 50) {
-            throw new ValidationException("Department name exceeds maximum length of 50 characters");
-        }
-
-        if (user.getDesignation() == null || user.getDesignation().trim().isEmpty()) {
-            throw new ValidationException("Designation cannot be null or empty");
-        }
-
-        if (user.getDesignation().length() > 50) {
-            throw new ValidationException("Designation exceeds maximum length of 50 characters");
+        // Validate designation
+        if (user.getDesignation() != null && !user.getDesignation().trim().isEmpty()) {
+            if (user.getDesignation().length() > 50) {
+                throw new ValidationException("Designation exceeds maximum length of 50 characters");
+            }
         }
 
         if (user.getPasswordHash() == null) {
@@ -177,9 +174,11 @@ public class UserService {
             user.setPasswordHash(PasswordUtil.hashPassword(randomPassword));
             System.out.println("Generated password for " + user.getEmail() + ": " + randomPassword);
         } else {
-            if (!PASSWORD_PATTERN.matcher(user.getPasswordHash()).matches()) {
+            String plainPassword = user.getPasswordHash();
+            if (!PASSWORD_PATTERN.matcher(plainPassword).matches()) {
                 throw new ValidationException("Password must be at least 8 characters and contain uppercase, lowercase, number, and special character");
             }
+            user.setPasswordHash(PasswordUtil.hashPassword(plainPassword));
         }
 
         boolean result = userDAO.createUser(user);

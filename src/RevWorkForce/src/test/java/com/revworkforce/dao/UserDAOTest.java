@@ -335,7 +335,7 @@ class UserDAOTest {
         when(rs.getString("employee_id")).thenReturn("EMP001");
         when(rs.getString("full_name")).thenReturn("John Doe");
         when(rs.getString("email")).thenReturn("john.doe@example.com");
-        when(rs.getString("password_hash")).thenReturn("password123");
+        when(rs.getString("password_hash")).thenReturn("ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f");
         when(rs.getString("phone")).thenReturn("1234567890");
         when(rs.getString("address")).thenReturn("123 Main St");
         when(rs.getString("emergency_contact")).thenReturn("Jane Doe: 0987654321");
